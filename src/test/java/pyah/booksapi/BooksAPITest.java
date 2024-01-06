@@ -9,7 +9,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 
-public class CreateNewUserTest {
+public class BooksAPITest {
+
 
     @Test
     @Order(1)
@@ -34,7 +35,6 @@ public class CreateNewUserTest {
     @Test
     @Order(2)
     void getToken() {
-
         UserData.setToken(
                 RestAssured
                         .given()
@@ -78,5 +78,48 @@ public class CreateNewUserTest {
                 .then()
                 .log().all()
                 .statusCode(200);
+    }
+
+    @Test
+    @Order(5)
+    void getAllBooks(){
+
+         UserData.setUserBook(RestAssured
+                .given()
+                .log().all()
+                .when()
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getToken())
+                .get("https://demoqa.com/BookStore/v1/Books")
+                .then()
+                .log().body()
+                .statusCode(200)
+                .extract().response().body().jsonPath().getString("books.isbn[2]"));
+    }
+
+    @Test
+    @Order(6)
+    void setUserBook(){
+
+        String body = "{\n" +
+                "  \"userId\": " + UserData.getUserID() + ",\n" +
+                "  \"collectionOfIsbns\": [\n" +
+                "    {\n" +
+                "      \"isbn\": " + UserData.getUserBook() +"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        RestAssured
+                .given()
+                .log().all()
+                .when()
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getToken())
+                .body(body)
+                .post("https://demoqa.com/BookStore/v1/Books")
+                .then()
+                .log().body()
+                .statusCode(201);
     }
 }

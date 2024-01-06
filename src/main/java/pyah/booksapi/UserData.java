@@ -5,6 +5,7 @@ public class UserData {
     private static String password;
     private static String token;
     private static String userID;
+    private static String userBook;
 
 
     private UserData(String userName, String password) {
@@ -50,5 +51,13 @@ public class UserData {
 
     public static void setUserID(String userID) {
         UserData.userID = userID;
+    }
+
+    public static String getUserBook() {
+        return userBook;
+    }
+
+    public static void setUserBook(String userBook) {
+        UserData.userBook = userBook;
     }
 }
