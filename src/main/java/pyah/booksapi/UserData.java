@@ -33,31 +33,26 @@ public class UserData {
         return userName;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public static String getToken() {
+    public String getToken() {
         return token;
     }
 
-    public static void setToken(String token) {
+    public void setToken(String token) {
         UserData.token = token;
     }
 
-    public static String getUserID() {
+    public String getUserID() {
         return userID;
     }
 
-    public static void setUserID(String userID) {
+    public void setUserID(String userID) {
         UserData.userID = userID;
     }
-
-    public static String getUserBook() {
-        return userBook;
+    public void setUserBook(String userBook){
+        UserData.userBook = userBook;
     }
 
-    public static void setUserBook(String userBook) {
-        UserData.userBook = userBook;
+    public String getUserBook() {
+        return userBook;
     }
 }

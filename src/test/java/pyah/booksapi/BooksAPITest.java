@@ -2,10 +2,14 @@ package pyah.booksapi;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.apache.http.HttpStatus;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.hamcrest.Matchers.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 
@@ -18,51 +22,77 @@ public class BooksAPITest {
 
         UserData.createInstance(Helper.randomFullName(), Helper.PASSWORD);
 
-        UserData.setUserID(
+        String body = "{\n" +
+                "  \"userName\": \"" + UserData.getInstance().getUserName() + "\",\n" +
+                "  \"password\": \"" + Helper.PASSWORD + "\"\n" +
+                "}";
+
+        UserData.getInstance().setUserID(
                 RestAssured
                         .given()
                         .log().all()
                         .when()
                         .contentType(ContentType.JSON)
-                        .body(UserData.getInstance())
+                        .body(body)
                         .post("https://demoqa.com/Account/v1/User")
                         .then()
                         .log().body()
                         .statusCode(201)
+                        .assertThat().statusCode(HttpStatus.SC_CREATED)
+                        .assertThat().body(Matchers.containsString("userID"))
                         .extract().response().body().jsonPath().getString("userID"));
     }
 
     @Test
     @Order(2)
     void getToken() {
-        UserData.setToken(
+
+        String body = "{\n" +
+                "  \"userName\": \"" + UserData.getInstance().getUserName() + "\",\n" +
+                "  \"password\": \"" + Helper.PASSWORD + "\"\n" +
+                "}";
+
+
+        UserData.getInstance().setToken(
+
                 RestAssured
                         .given()
                         .log().all()
                         .when()
                         .contentType(ContentType.JSON)
-                        .body(UserData.getInstance())
+                        .body(body)
                         .post("https://demoqa.com/Account/v1/GenerateToken")
                         .then()
                         .log().body()
                         .statusCode(200)
+                        .assertThat()
+                            .body("status", equalTo("Success"))
+                            .body("token", notNullValue())
                         .extract().response().body().jsonPath().getString("token"));
     }
 
     @Test
     @Order(3)
     void isUserAuthorized() {
+
+        String body = "{\n" +
+                "  \"userName\": \"" + UserData.getInstance().getUserName() + "\",\n" +
+                "  \"password\": \"" + Helper.PASSWORD + "\"\n" +
+                "}";
+
+
         RestAssured
                 .given()
                 .log().all()
                 .when()
                 .contentType(ContentType.JSON)
-                .header("authorization", "Bearer " + UserData.getToken())
-                .body(UserData.getInstance())
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .body(body)
                 .post("https://demoqa.com/Account/v1/Authorized")
                 .then()
                 .log().all()
-                .statusCode(200);
+                .statusCode(200)
+                .assertThat().body(Matchers.containsString("true"));
     }
 
     @Test
@@ -73,39 +103,43 @@ public class BooksAPITest {
                 .log().all()
                 .when()
                 .contentType(ContentType.JSON)
-                .header("authorization", "Bearer " + UserData.getToken())
-                .get("https://demoqa.com/Account/v1/User/" + UserData.getUserID())
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .get("https://demoqa.com/Account/v1/User/" + UserData.getInstance().getUserID())
                 .then()
                 .log().all()
-                .statusCode(200);
+                .statusCode(200)
+                .assertThat()
+                .body("userId", equalTo(UserData.getInstance().getUserID()))
+                .body("username", equalTo(UserData.getInstance().getUserName()));
     }
 
     @Test
     @Order(5)
     void getAllBooks(){
 
-         UserData.setUserBook(RestAssured
+         UserData.getInstance().setUserBook(RestAssured
                 .given()
                 .log().all()
                 .when()
                 .contentType(ContentType.JSON)
-                .header("authorization", "Bearer " + UserData.getToken())
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
                 .get("https://demoqa.com/BookStore/v1/Books")
                 .then()
                 .log().body()
                 .statusCode(200)
+                .assertThat().body("books.isbn[2]", notNullValue())
                 .extract().response().body().jsonPath().getString("books.isbn[2]"));
     }
 
     @Test
     @Order(6)
-    void setUserBook(){
+    void setUserBook() {
 
         String body = "{\n" +
-                "  \"userId\": " + UserData.getUserID() + ",\n" +
+                "  \"userId\": \"" + UserData.getInstance().getUserID() + "\",\n" +
                 "  \"collectionOfIsbns\": [\n" +
                 "    {\n" +
-                "      \"isbn\": " + UserData.getUserBook() +"\n" +
+                "      \"isbn\": \"" + UserData.getInstance().getUserBook() + "\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";
@@ -115,11 +149,107 @@ public class BooksAPITest {
                 .log().all()
                 .when()
                 .contentType(ContentType.JSON)
-                .header("authorization", "Bearer " + UserData.getToken())
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
                 .body(body)
                 .post("https://demoqa.com/BookStore/v1/Books")
                 .then()
                 .log().body()
-                .statusCode(201);
+                .statusCode(201)
+                .assertThat().body("books.isbn[0]", equalTo(UserData.getInstance().getUserBook()));
+    }
+
+    @Test
+    @Order(7)
+    void getBookByISBN(){
+        RestAssured
+                .given()
+                .log().all()
+                .when()
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .get("https://demoqa.com/BookStore/v1/Book?ISBN=" + UserData.getInstance().getUserBook())
+                .then()
+                .log().all()
+                .statusCode(200)
+                .assertThat()
+                .body("isbn", equalTo("9781449337711"))
+                .body("title", equalTo("Designing Evolvable Web APIs with ASP.NET"))
+                .body("subTitle", equalTo("Harnessing the Power of the Web"))
+                .body("author", equalTo("Glenn Block et al."))
+                .body("publish_date", equalTo("2020-06-04T09:12:43.000Z"))
+                .body("publisher", equalTo("O'Reilly Media"))
+                .body("pages", equalTo(238))
+                .body("description", containsString("Design and build Web APIs"))
+                .body("website", equalTo("http://chimera.labs.oreilly.com/books/1234000001708/index.html"));
+    }
+
+    @Test
+    @Order(8)
+    void deleteUserBook(){
+
+        String body = "{\n" +
+                "  \"isbn\": \"" + UserData.getInstance().getUserBook() + "\",\n" +
+                "  \"userId\": \"" + UserData.getInstance().getUserID() + "\"\n" +
+                "}";
+
+        RestAssured
+                .given()
+                .log().all()
+                .when()
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .body(body)
+                .delete("https://demoqa.com/BookStore/v1/Book")
+                .then()
+                .log().all()
+                .statusCode(204);
+    }
+
+    @Test
+    @Order(9)
+    void isBooksDeleted(){
+        RestAssured
+                .given()
+                .log().all()
+                .when()
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .get("https://demoqa.com/BookStore/v1/Book?ISBN=" + UserData.getInstance().getUserBook())
+                .then()
+                .log().body()
+                .statusCode(400);
+    }
+
+    @Test
+    @Order(10)
+    void deleteUser(){
+        RestAssured
+                .given()
+                .log().all()
+                .when()
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .delete("https://demoqa.com/Account/v1/User/" + UserData.getInstance().getUserID())
+                .then()
+                .log().all()
+                .statusCode(204);
+    }
+
+    @Test
+    @Order(11)
+    void isUserDeleted(){
+
+        System.out.println(UserData.getInstance().getUserID());
+        RestAssured
+                .given()
+                .log().all()
+                .when()
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .get("https://demoqa.com/Account/v1/User/" + UserData.getInstance().getUserID())
+                .then()
+                .log().all()
+                .statusCode(401)
+                .assertThat().body("message", equalTo("User not found!"));
     }
 }
