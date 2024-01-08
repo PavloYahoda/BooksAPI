@@ -75,7 +75,7 @@ public class BooksAPITest {
 
     @Test
     @Order(3)
-    void isUserAuthorized() {
+    void userLogin() {
 
         String body = "{\n" +
                 "  \"userName\": \"" + UserData.getInstance().getUserName() + "\",\n" +
@@ -91,11 +91,11 @@ public class BooksAPITest {
                 .contentType(ContentType.JSON)
                 .header("authorization", "Bearer " + UserData.getInstance().getToken())
                 .body(body)
-                .post("/Authorized")
+                .post("/Login")
                 .then()
                 .log().all()
                 .statusCode(200)
-                .assertThat().body(Matchers.containsString("true"));
+                .assertThat().body("userId", equalTo(UserData.getInstance().getUserID()));
     }
 
     @Test
@@ -125,7 +125,7 @@ public class BooksAPITest {
                 .given()
                 .log().all()
                 .when()
-                 .baseUri("https://demoqa.com/Account/v1")
+                .baseUri("https://demoqa.com/BookStore/v1")
                 .contentType(ContentType.JSON)
                 .header("authorization", "Bearer " + UserData.getInstance().getToken())
                 .get("/Books")
@@ -153,7 +153,7 @@ public class BooksAPITest {
                 .given()
                 .log().all()
                 .when()
-                .baseUri("https://demoqa.com/Account/v1")
+                .baseUri("https://demoqa.com/BookStore/v1")
                 .contentType(ContentType.JSON)
                 .header("authorization", "Bearer " + UserData.getInstance().getToken())
                 .body(body)
@@ -171,7 +171,7 @@ public class BooksAPITest {
                 .given()
                 .log().all()
                 .when()
-                .baseUri("https://demoqa.com/Account/v1")
+                .baseUri("https://demoqa.com/BookStore/v1")
                 .contentType(ContentType.JSON)
                 .header("authorization", "Bearer " + UserData.getInstance().getToken())
                 .get("/Book?ISBN=" + UserData.getInstance().getUserBook())
@@ -192,6 +192,24 @@ public class BooksAPITest {
 
     @Test
     @Order(8)
+    void getUserBooks(){
+        RestAssured
+                .given()
+                .log().all()
+                .when()
+                .baseUri("https://demoqa.com/Account/v1")
+                .contentType(ContentType.JSON)
+                .header("authorization", "Bearer " + UserData.getInstance().getToken())
+                .get("/User/" + UserData.getInstance().getUserID())
+                .then()
+                .log().all()
+                .statusCode(200)
+                .assertThat()
+                .body("books.isbn[0]", equalTo(UserData.getInstance().getUserBook()));
+    }
+
+    @Test
+    @Order(9)
     void deleteUserBook(){
 
         String body = "{\n" +
@@ -203,7 +221,7 @@ public class BooksAPITest {
                 .given()
                 .log().all()
                 .when()
-                .baseUri("https://demoqa.com/Account/v1")
+                .baseUri("https://demoqa.com/BookStore/v1")
                 .contentType(ContentType.JSON)
                 .header("authorization", "Bearer " + UserData.getInstance().getToken())
                 .body(body)
@@ -214,7 +232,7 @@ public class BooksAPITest {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void isBooksDeleted(){
         RestAssured
                 .given()
@@ -223,14 +241,16 @@ public class BooksAPITest {
                 .baseUri("https://demoqa.com/Account/v1")
                 .contentType(ContentType.JSON)
                 .header("authorization", "Bearer " + UserData.getInstance().getToken())
-                .get("/Book?ISBN=" + UserData.getInstance().getUserBook())
+                .get("/User/" + UserData.getInstance().getUserID())
                 .then()
-                .log().body()
-                .statusCode(400);
+                .log().all()
+                .statusCode(200)
+                .assertThat()
+                .body("books.isbn[0]", nullValue());
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void deleteUser(){
         RestAssured
                 .given()
@@ -246,7 +266,7 @@ public class BooksAPITest {
     }
 
     @Test
-    @Order(11)
+    @Order(12)
     void isUserDeleted(){
 
         System.out.println(UserData.getInstance().getUserID());
