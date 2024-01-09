@@ -137,9 +137,8 @@ public class BooksAPITest {
         //Now parse value from List
         List<String> allBooks = new ArrayList<>();
 
-        for(int i = 0; i < booksList.size(); i++){
-            HashMap<String,Object> firstBookDetails = booksList.get(i);
-            allBooks.add((String)firstBookDetails.get("isbn"));
+        for (HashMap<String, Object> firstBookDetails : booksList) {
+            allBooks.add((String) firstBookDetails.get("isbn"));
         }
         UserData.getInstance().setAllBooks(allBooks);
         System.out.println(UserData.getInstance().getAllBooks());
