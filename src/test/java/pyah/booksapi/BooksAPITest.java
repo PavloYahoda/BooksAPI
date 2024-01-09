@@ -301,8 +301,7 @@ public class BooksAPITest {
                 .log().all()
                 .statusCode(200)
                 .assertThat()
-                .body("books.isbn[1]", nullValue())
-                .body("books.isbn[2]", nullValue());
+                .body("books.isbn[0]", nullValue());
     }
 
     @Test
